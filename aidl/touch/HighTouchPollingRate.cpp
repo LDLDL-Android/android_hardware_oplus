@@ -9,15 +9,28 @@
 
 #include <android-base/file.h>
 #include <android-base/logging.h>
+#include <android-base/properties.h>
 
 #include <OplusTouchConstants.h>
 
+using ::android::base::GetProperty;
 using ::android::base::ReadFileToString;
 using ::android::base::WriteStringToFile;
 
 namespace {
 
 constexpr const char* kGameSwitchEnablePath = "/proc/touchpanel/game_switch_enable";
+// Optional user-selected report rate mode written when enabling, see HTPR_ENABLE_VALUE.
+constexpr const char* kReportRateModeProperty = "persist.sys.oplus.touch.report_rate_mode";
+
+std::string GetEnableValue() {
+    const std::string mode = GetProperty(kReportRateModeProperty, "");
+    if (!mode.empty() && mode != "0" &&
+        mode.find_first_not_of("0123456789") == std::string::npos) {
+        return mode;
+    }
+    return HTPR_ENABLE_VALUE;
+}
 
 }  // anonymous namespace
 
@@ -54,7 +67,7 @@ ndk::ScopedAStatus HighTouchPollingRate::setEnabled(bool enable) {
 
         ndk::ScopedAStatus status = mOplusTouch->touchWriteNodeFile(
                 OplusTouchConstants::DEFAULT_TP_IC_ID, HTPR_ENABLE_NODE,
-                enable ? HTPR_ENABLE_VALUE : "0", &aidl_return);
+                enable ? GetEnableValue() : "0", &aidl_return);
         if (!status.isOk() || aidl_return < 0) {
             LOG(ERROR) << "Failed to write AIDL HighTouchPollingRate state";
             return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);

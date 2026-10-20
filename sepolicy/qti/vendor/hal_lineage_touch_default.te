@@ -4,3 +4,5 @@ binder_call(hal_lineage_touch_default, hal_oplus_touch_aidl)
 binder_use(hal_lineage_touch_default)
 
 rw_dir_file(hal_lineage_touch_default, vendor_proc_display)
+
+get_prop(hal_lineage_touch_default, exported_system_prop)
